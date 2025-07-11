@@ -1,79 +1,168 @@
-| Supported Targets | ESP32-S3 |
-| ----------------- | -------- |
+# RoArm-M2 Touchscreen Controller
 
-| Supported LCD Controller    | ST7701 |
-| ----------------------------| -------|
+A touch-based robot arm controller built on ESP32-S3 with RGB LCD display, designed to control the RoArm-M2 robot arm via WiFi.
 
-| Supported Touch Controller  |  GT911 |
-| ----------------------------| -------|
+## Features
 
-# RGB Avoid Tearing Example
+- **Real-time Control**: Interactive sliders for 4 robot joints + LED control
+- **WiFi Connectivity**: Auto-connects to RoArm-M2 network
+- **Touch Interface**: 800x480 RGB LCD with capacitive touch
+- **Immediate Response**: 50ms UI updates with instant robot commands
+- **Safety Limits**: Software-enforced joint angle restrictions
 
-[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd.html) provides several panel drivers out-of box, e.g. ST7789, SSD1306, NT35510. However, there're a lot of other panels on the market, it's beyond `esp_lcd` component's responsibility to include them all.
+## Hardware Requirements
 
-`esp_lcd` allows user to add their own panel drivers in the project scope (i.e. panel driver can live outside of esp-idf), so that the upper layer code like LVGL porting code can be reused without any modifications, as long as user-implemented panel driver follows the interface defined in the `esp_lcd` component.
+| Component | Specification |
+|-----------|---------------|
+| **MCU** | ESP32-S3R8 |
+| **LCD Controller** | ST7701 (RGB interface) |
+| **Touch Controller** | GT911 |
+| **Display** | 800x480 RGB LCD |
+| **Target Robot** | RoArm-M2 |
 
-This example demonstrates how to avoid tearing when using LVGL with RGB interface screens in an esp-idf project. The example will use the LVGL library to draw a stylish music player.
+## Robot Control Mapping
 
-This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code. For more porting guides, please refer to [LVGL porting doc](https://docs.lvgl.io/master/porting/index.html).
+| Control | Range | Robot Joint | Physical Range |
+|---------|--------|-------------|----------------|
+| **Base Slider** | 0-100% | Joint 1 | ±90° (-1.57 to +1.57 rad) |
+| **Shoulder Slider** | 0-100% | Joint 2 | -11° to +80° (-0.2 to +1.4 rad) |
+| **Arm Slider** | 0-100% | Joint 3 | -57° to +86° (-1.0 to +1.5 rad) |
+| **Gripper Slider** | 0-100% | Joint 4 | Open to Close (1.08 to 3.14 rad) |
+| **Light Switch** | ON/OFF | LED | 0-255 brightness |
 
-## How to use the example
-
-## ESP-IDF Required
-
-### Hardware Required
-
-* An ESP32-S3R8 development board
-* A ST7701 LCD panel, with RGB interface
-* An USB cable for power supply and programming
-
-### Hardware Connection
-
-The connection between ESP Board and the LCD is as follows:
+## Hardware Connection
 
 ```
-       ESP Board                           RGB  Panel
+       ESP32-S3                            RGB LCD Panel
 +-----------------------+              +-------------------+
 |                   GND +--------------+GND                |
-|                       |              |                   |
 |                   3V3 +--------------+VCC                |
-|                       |              |                   |
-|                   PCLK+--------------+PCLK               |
-|                       |              |                   |
-|             DATA[15:0]+--------------+DATA[15:0]         |
-|                       |              |                   |
-|                  HSYNC+--------------+HSYNC              |
-|                       |              |                   |
-|                  VSYNC+--------------+VSYNC              |
-|                       |              |                   |
-|                     DE+--------------+DE                 |
-|                       |              |                   |
-|               BK_LIGHT+--------------+BLK                |
-+-----------------------+              |                   |
-                               3V3-----+DISP_EN            |
-                                       |                   |
-                                       +-------------------+
+|                  PCLK +--------------+PCLK               |
+|            DATA[15:0] +--------------+DATA[15:0]         |
+|                 HSYNC +--------------+HSYNC              |
+|                 VSYNC +--------------+VSYNC              |
+|                    DE +--------------+DE                 |
+|              BK_LIGHT +--------------+BLK                |
++-----------------------+              +-------------------+
 ```
 
-* The LCD parameters and GPIO number used by this example can be changed in [example_rgb_avoid_tearing.c](main/example_rgb_avoid_tearing.c). Especially, please pay attention to the **vendor specific initialization**, it can be different between manufacturers and should consult the LCD supplier for initialization sequence code.
-* The LVGL parameters can be changed not only through `menuconfig` but also directly in `lvgl_conf.h`
+## WiFi Setup
 
-### Configure the Project
+The controller automatically connects to:
+- **Network**: "RoArm-M2"
+- **Password**: "12345678"
+- **Robot IP**: 192.168.4.1
 
-Run `idf.py menuconfig` and navigate to `Example Configuration` menu.
+## Software Architecture
 
-### Build and Flash
+```
+┌─────────────────┐    ┌──────────────┐    ┌────────────────┐
+│   Touch Input   │───▶│  LVGL UI     │───▶│  Robot Commands│
+│   (Sliders)     │    │  (EEZ Flow)  │    │  (HTTP/JSON)   │
+└─────────────────┘    └──────────────┘    └────────────────┘
+                              │
+                              ▼
+                       ┌──────────────┐
+                       │ WiFi Manager │
+                       └──────────────┘
+```
 
-Run `idf.py set-target esp32s3` to select the target chip.
+## API Commands
 
-Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A fancy animation will show up on the LCD as expected.
+The robot uses HTTP GET requests with URL-encoded JSON:
 
-The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from registry into `managed_components` folder.
+```bash
+# Enable torque
+GET /js?json={"T":210,"cmd":1}
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+# Move base joint to 45°
+GET /js?json={"T":101,"joint":1,"rad":0.785,"spd":50,"acc":50}
 
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+# LED control (0-255)
+GET /js?json={"T":114,"led":128}
+```
+
+## Build and Flash
+
+### Prerequisites
+
+- ESP-IDF v5.0 or later
+- CMake
+- Git
+
+### Setup
+
+```bash
+# Clone repository
+git clone <your-repo-url>
+cd robot_arm_screen
+
+# Set ESP32-S3 target
+idf.py set-target esp32s3
+
+# Build project
+idf.py build
+
+# Flash and monitor
+idf.py -p /dev/ttyUSB0 flash monitor
+```
+
+### First Build
+
+The first build downloads dependencies (~101MB) into `components/`:
+- LVGL graphics library
+- LCD touch drivers
+- ESP32-S3 components
+
+## Project Structure
+
+```
+robot_arm_screen/
+├── main/
+│   ├── main.c                 # Application entry point
+│   ├── wifi_manager.c/.h      # WiFi connection management
+│   ├── robot_arm_comm.c/.h    # Robot HTTP API communication
+│   ├── ui_robot_interface.c/.h # UI event handlers
+│   ├── screens.c/.h           # LVGL UI screens (EEZ Flow)
+│   └── lvgl_port.c/.h         # LVGL porting layer
+├── components/                # ESP-IDF components
+├── partitions.csv             # Custom 2MB app partition
+└── CMakeLists.txt            # Build configuration
+```
+
+## Key Features
+
+### Real-time Control
+- 50ms UI refresh rate
+- Immediate robot response to slider changes
+- Percentage-based control (0-100%) mapped to radians
+
+### Connection Management
+- Auto-reconnection to RoArm-M2 network
+- Connection status monitoring
+- UI feedback for network state
+
+### Safety Features
+- Software joint limits
+- Safe starting positions
+- Torque enable/disable control
 
 ## Troubleshooting
 
-For any technical queries, please open an [issue](https://github.com/espressif/esp-iot-solution/issues) on GitHub. We will get back to you soon.
+### Build Issues
+
+**Binary too large**: Uses custom 2MB partition table
+**Missing components**: Run `idf.py build` to auto-download
+
+### Runtime Issues
+
+**WiFi connection failed**: Check RoArm-M2 network availability
+**Robot not responding**: Verify 192.168.4.1 accessibility
+**UI unresponsive**: Check LVGL task and timers
+
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
