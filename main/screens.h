@@ -16,6 +16,12 @@ typedef struct _objects_t {
     lv_obj_t *gripper_motor;
     lv_obj_t *obj0;
     lv_obj_t *light_switch;
+    // Robot arm control sliders
+    lv_obj_t *base_slider;
+    lv_obj_t *shoulder_slider;
+    lv_obj_t *arm_slider;
+    lv_obj_t *gripper_slider;
+    lv_obj_t *light_switch_obj;
 } objects_t;
 
 extern objects_t objects;

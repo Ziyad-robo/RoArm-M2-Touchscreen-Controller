@@ -33,27 +33,35 @@ void create_screen_main() {
         }
         {
             lv_obj_t *obj = lv_slider_create(parent_obj);
+            objects.base_slider = obj;  // Store base slider
             lv_obj_set_pos(obj, 227, 100);
             lv_obj_set_size(obj, 522, 47);
-            lv_slider_set_value(obj, 25, LV_ANIM_OFF);
+            lv_slider_set_value(obj, 50, LV_ANIM_OFF);  // Center position
+            lv_slider_set_range(obj, 0, 100);  // 0-100 range for easier mapping
         }
         {
             lv_obj_t *obj = lv_slider_create(parent_obj);
-            lv_obj_set_pos(obj, 227, 267);
-            lv_obj_set_size(obj, 522, 47);
-            lv_slider_set_value(obj, 25, LV_ANIM_OFF);
-        }
-        {
-            lv_obj_t *obj = lv_slider_create(parent_obj);
+            objects.shoulder_slider = obj;  // Store shoulder slider
             lv_obj_set_pos(obj, 227, 193);
             lv_obj_set_size(obj, 522, 47);
-            lv_slider_set_value(obj, 25, LV_ANIM_OFF);
+            lv_slider_set_value(obj, 20, LV_ANIM_OFF);  // Start position (safe range)
+            lv_slider_set_range(obj, 0, 100);  // 0-100 range for easier mapping
         }
         {
             lv_obj_t *obj = lv_slider_create(parent_obj);
+            objects.arm_slider = obj;  // Store arm slider
+            lv_obj_set_pos(obj, 227, 267);
+            lv_obj_set_size(obj, 522, 47);
+            lv_slider_set_value(obj, 40, LV_ANIM_OFF);  // Safe starting position
+            lv_slider_set_range(obj, 0, 100);  // 0-100 range for easier mapping
+        }
+        {
+            lv_obj_t *obj = lv_slider_create(parent_obj);
+            objects.gripper_slider = obj;  // Store gripper slider
             lv_obj_set_pos(obj, 227, 345);
             lv_obj_set_size(obj, 522, 47);
-            lv_slider_set_value(obj, 25, LV_ANIM_OFF);
+            lv_slider_set_value(obj, 0, LV_ANIM_OFF);  // Start at 0% (fully open)
+            lv_slider_set_range(obj, 0, 100);  // 0-100 range for easier mapping
         }
         {
             // base_motor
@@ -98,6 +106,7 @@ void create_screen_main() {
         {
             lv_obj_t *obj = lv_switch_create(parent_obj);
             objects.obj0 = obj;
+            objects.light_switch_obj = obj;  // Store light switch reference
             lv_obj_set_pos(obj, 644, 8);
             lv_obj_set_size(obj, 126, 67);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0xff85e30a), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -123,7 +132,7 @@ void tick_screen_main() {
 
 
 static const char *screen_names[] = { "Main" };
-static const char *object_names[] = { "main", "title", "base_motor", "shoulder_motor", "arm_motor", "gripper_motor", "obj0", "light_switch" };
+static const char *object_names[] = { "main", "title", "base_motor", "shoulder_motor", "arm_motor", "gripper_motor", "obj0", "light_switch", "base_slider", "shoulder_slider", "arm_slider", "gripper_slider", "light_switch_obj" };
 
 
 typedef void (*tick_screen_func_t)();

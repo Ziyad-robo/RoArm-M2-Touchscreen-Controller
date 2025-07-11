@@ -8,6 +8,9 @@ idf_component_register(
          "styles.c"
          "eez-flow.cpp"
          "eez-flow-lz4.c"
+         "wifi_manager.c"
+         "robot_arm_comm.c"
+         "ui_robot_interface.c"
     INCLUDE_DIRS ".")
 
 idf_component_get_property(lvgl_lib lvgl__lvgl COMPONENT_LIB)
