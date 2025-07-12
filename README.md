@@ -17,8 +17,15 @@ A touch-based robot arm controller built on ESP32-S3 with RGB LCD display, desig
 | **MCU** | ESP32-S3R8 |
 | **LCD Controller** | ST7701 (RGB interface) |
 | **Touch Controller** | GT911 |
-| **Display** | 800x480 RGB LCD |
+| **Display** | 800x480 RGB LCD Waveshare ESP32-S3-Touch-LCD-4.3 |
 | **Target Robot** | RoArm-M2 |
+
+![LCD Display](lcd.jpeg)
+
+## Demo Video
+
+[![RoArm-M2 Touchscreen Controller Demo](https://img.youtube.com/vi/3UHHQXSJ1Qw/0.jpg)](https://youtube.com/shorts/3UHHQXSJ1Qw)
+
 
 ## Robot Control Mapping
 
